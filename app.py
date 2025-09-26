@@ -6,7 +6,9 @@ import spacy
 # 1. Setup
 # -----------------------------
 API_KEY = "244fbebdb4ab45aab252b694ccfdf045"
-nlp = spacy.load("en_core_web_sm")
+import en_core_web_sm
+
+nlp = en_core_web_sm.load()
 
 # -----------------------------
 # 2. Functions
