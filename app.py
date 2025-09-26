@@ -1,14 +1,12 @@
 import streamlit as st
 import requests
-import spacy
+from sentence_transformers import SentenceTransformer, util
 
 # -----------------------------
 # 1. Setup
 # -----------------------------
-API_KEY = "244fbebdb4ab45aab252b694ccfdf045"
-import en_core_web_sm
-
-nlp = en_core_web_sm.load()
+API_KEY = st.secrets["API_KEY"]
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # -----------------------------
 # 2. Functions
@@ -22,11 +20,11 @@ def fetch_ingredients(query, number=10):
         return []
 
 def rank_ingredients(user_input, candidates):
-    user_vec = nlp(user_input)
+    user_vec = model.encode(user_input, convert_to_tensor=True)
     ranked = []
     for ing in candidates:
-        ing_vec = nlp(ing)
-        similarity = user_vec.similarity(ing_vec)
+        ing_vec = model.encode(ing, convert_to_tensor=True)
+        similarity = util.cos_sim(user_vec, ing_vec).item()
         ranked.append((ing, similarity))
     ranked.sort(key=lambda x: x[1], reverse=True)
     return [item[0] for item in ranked]
@@ -36,7 +34,7 @@ def predict_related_ingredients(user_input):
     if not candidates:
         return ["No related ingredients found"]
     ranked_ingredients = rank_ingredients(user_input, candidates)
-    return ranked_ingredients[:5]  # return top 5
+    return ranked_ingredients[:5]
 
 # -----------------------------
 # 3. Streamlit Frontend
@@ -46,7 +44,6 @@ st.set_page_config(page_title="Ingredient Predictor", page_icon="🍴")
 st.title("🍴 Ingredient Predictor")
 st.write("Type an ingredient or dish and get related ingredients using NLP & Spoonacular API.")
 
-# Input
 user_input = st.text_input("Enter an ingredient or dish:", "")
 
 if st.button("🔍 Predict Related Ingredients"):
